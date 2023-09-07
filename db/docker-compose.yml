@@ -1,0 +1,29 @@
+version: '3.3'
+services:
+
+    db:
+        image: postgres:13
+        platform: linux/x86_64
+        restart: always
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+        ports:
+            - '5432:5432'
+        volumes:
+            - "./create_healthcare_schema.sql:/docker-entrypoint-initdb.d/2.0.sql"
+            - "./create_users_table.sql:/docker-entrypoint-initdb.d/3.0.sql"
+            - "./insert_user_data.sql:/docker-entrypoint-initdb.d/3.1.sql"
+            - "./create_patients_table.sql:/docker-entrypoint-initdb.d/4.0.sql"
+            - "./insert_patient_data.sql:/docker-entrypoint-initdb.d/4.1.sql"
+            - "./create_medical_professionals_table.sql:/docker-entrypoint-initdb.d/5.0.sql"
+            - "./insert_medical_professional_data.sql:/docker-entrypoint-initdb.d/5.1.sql"
+            - "./create_appointments_table.sql:/docker-entrypoint-initdb.d/6.0.sql"
+            - "./insert_appointment_data.sql:/docker-entrypoint-initdb.d/6.1.sql"
+            - "./create_medical_records_table.sql:/docker-entrypoint-initdb.d/7.0.sql"
+            - "./insert_medical_record_data.sql:/docker-entrypoint-initdb.d/7.1.sql"
+            - "./create_customer_satisfaction_score_table.sql:/docker-entrypoint-initdb.d/8.0.sql"
+            - "./insert_customer_satisfaction_score_data.sql:/docker-entrypoint-initdb.d/8.1.sql"
+            - "./create_bills_table.sql:/docker-entrypoint-initdb.d/9.0.sql"
+            - "./insert_bill_data.sql:/docker-entrypoint-initdb.d/9.1.sql"
+
