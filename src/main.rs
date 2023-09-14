@@ -1,5 +1,6 @@
-use std::process::exit;
+use std::{process::exit, time::SystemTime};
 
+use chrono::{DateTime, Utc};
 use clap::Parser;
 use postgres::{Client, NoTls, Row, Column};
 use tabled::builder::Builder;
@@ -79,6 +80,10 @@ fn build_table(rows: Vec<Row>) -> String {
             } else if col_type.contains("char") {
                 let value: String = row.get(i);
                 record.insert(i, value);
+            } else if col_type.contains("timestamp") || col_type.contains("date") {
+                let value: SystemTime = row.get(i);
+                let datetime: DateTime<Utc> = value.into();
+                record.insert(i, format!("{}", datetime.format("%d/%m/%Y %T")));
             }
 
             // incriment counter
