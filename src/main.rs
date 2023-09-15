@@ -1,4 +1,4 @@
-use std::{process::exit, time::SystemTime};
+use std::{process::exit, time::SystemTime, io::{self, Write}};
 
 use chrono::{DateTime, Utc};
 use clap::Parser;
@@ -19,18 +19,13 @@ struct Args {
     #[clap(long="password")]
     password: String, 
     #[clap(long="database")]
-    database: String, 
-    // #[clap(long="schema")]
-    // schema: String, 
-    #[clap(long="query")]
-    query: String,
+    database: String,
 }
 
 fn main() {
     // parse arguments
     let args = Args::parse();
-
-    // postgres
+    // create connection
     let mut client: Client;
     client = Client::connect(format!("{}://{}:{}@{}:{}/{}", 
             args.mode,
@@ -41,11 +36,33 @@ fn main() {
             args.database,
         ).as_str(), 
         NoTls).unwrap();
-    
-    // make and print the table
-    match client.query(args.query.as_str(), &[]) {
-        Ok(rows) => println!("{}", build_table(rows)),
-        Err(err) => panic!("{err}"),
+
+    loop {
+        // make and print the table
+        match client.query(get_user_query().as_str(), &[]) {
+            Ok(rows) => println!("{}", build_table(rows)),
+            Err(_) => continue,
+        }
+    }
+}
+
+fn get_user_query() -> String {
+    let stdin = io::stdin();
+    let mut query = String::new();
+    print!("query > ");
+    io::stdout().flush().expect("could not flush");
+    match stdin.read_line(&mut query) {
+        Ok(_) => {
+            if query == "/q" {
+                exit(0);
+            }
+
+            query
+        },
+        Err(error) => {
+            println!("error: {error}");
+            String::new()
+        },
     }
 }
 
@@ -57,8 +74,7 @@ fn build_table(rows: Vec<Row>) -> String {
     let header_info = if rows.len() > 0 {
         build_header(&mut rows[0].columns(), &mut builder)
     } else {
-        println!("NO ROWS FOUND");
-        exit(1)
+        return String::from("NO ROWS FOUND");
     };
 
     for row in rows {
@@ -77,6 +93,9 @@ fn build_table(rows: Vec<Row>) -> String {
             if col_type.contains("int") {
                 let value: i32 = row.get(i);
                 record.insert(i, value.to_string());
+            } else if col_type.contains("double") || col_type.contains("numeric") {
+                let value: f64 = row.get(i);
+                record.insert(i, value.to_string());
             } else if col_type.contains("char") {
                 let value: String = row.get(i);
                 record.insert(i, value);
@@ -84,6 +103,8 @@ fn build_table(rows: Vec<Row>) -> String {
                 let value: SystemTime = row.get(i);
                 let datetime: DateTime<Utc> = value.into();
                 record.insert(i, format!("{}", datetime.format("%d/%m/%Y %T")));
+            } else {
+               println!("{col_type}");
             }
 
             // incriment counter
